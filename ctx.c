@@ -6,16 +6,19 @@ static hon_ctx_t* _ctx = NULL;
 static int
 _hon_ctx_new_msgbox(int i)
 {
-	_ctx->slots[i].nin      = 0;
-	_ctx->slots[i].inbox    = hon_msgbox_create();
-
-	_ctx->slots[i].nout     = 0;
-	_ctx->slots[i].outbox   = hon_msgbox_create();
-
-	if (UNLIKELY(!_ctx->slots[i].inbox || !_ctx->slots[i].outbox)) {
+	_ctx->slots[i].inbox = hon_msgbox_create();
+	if (UNLIKELY(!_ctx->slots[i].inbox)) {
 		return 0;
 	}
 
+	_ctx->slots[i].outbox = hon_msgbox_create();
+	if (UNLIKELY(!_ctx->slots[i].outbox)) {
+		FREEN(_ctx->slots[i].inbox);
+		return 0;
+	}
+
+	_ctx->slots[i].terminating = 0;
+	_ctx->slots[i].nin = _ctx->slots[i].nout = 0;
 	return 1;
 }
 

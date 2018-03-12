@@ -5,6 +5,7 @@ _hon_actor_threadfn(void* args)
 {
 	hon_actor_t* self = (hon_actor_t*)args;
 	self->fn(self->args);
+	// TODO: Send term msg.
 	return NULL;
 }
 
@@ -17,9 +18,9 @@ hon_actor_create()
 		return NULL;
 	}
 
-	self->sid = hon_ctx_attach();
+	self->id = hon_ctx_attach();
 
-	if (UNLIKELY(self->sid < 0)) {
+	if (UNLIKELY(self->id < 0)) {
 		FREEN(self);
 		return NULL;
 	}
@@ -38,6 +39,9 @@ hon_actor_behavior(hon_actor_t* self, hon_actor_be_t* fn, void* args)
 void
 hon_actor_start(hon_actor_t* self)
 {
+	assert(self);
+	assert(self->fn);
+
 	pthread_create(&self->tid, NULL, _hon_actor_threadfn, self);
 	pthread_detach(self->tid);
 }
