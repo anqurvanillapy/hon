@@ -1,22 +1,18 @@
 #include "hon.h"
 
 static int _started = 0;
-static hon_ctx_t* _ctx;
+static hon_ctx_t* _ctx = NULL;
 
 static int
 _hon_ctx_new_msgbox(int i)
 {
 	_ctx->slots[i].nin      = 0;
-	_ctx->slots[i].inbox    = (hon_lfq_t*)malloc(sizeof(hon_lfq_t));
-
-	if (UNLIKELY(!_ctx->slots[i].inbox)) {
-		return 0;
-	}
+	_ctx->slots[i].inbox    = hon_msgbox_create();
 
 	_ctx->slots[i].nout     = 0;
-	_ctx->slots[i].outbox   = (hon_lfq_t*)malloc(sizeof(hon_lfq_t));
+	_ctx->slots[i].outbox   = hon_msgbox_create();
 
-	if (UNLIKELY(!_ctx->slots[i].outbox)) {
+	if (UNLIKELY(!_ctx->slots[i].inbox || !_ctx->slots[i].outbox)) {
 		return 0;
 	}
 

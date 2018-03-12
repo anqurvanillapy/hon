@@ -6,9 +6,12 @@
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
+#include <stdatomic.h>
 
 #define DEFAULT_SLOTS   16
 #define MAX_SLOTS       256
+
+#define MSGBOX_BUFSIZ   256
 
 /**
  *  Utilities.
@@ -26,25 +29,42 @@
 		}                                                                   \
 	} while (0)
 
-#define FREEN(x)    do { free(x); x = NULL; } while (0)
+#define FREEN(x) do { free(x); x = NULL; } while (0)
 
-typedef struct hon_lfq_t {
-	// TODO
-} hon_lfq_t;
+#define CACHE_ALIGNED __attribute__((__aligned__(sizeof(size_t) * 2)))
+
+/**
+ *  Messaging.
+ */
+
+typedef struct hon_msg_t {
+	atomic_size_t   seq;
+	size_t          size;
+	void*           data;
+} hon_msg_t;
+
+typedef struct hon_msgbox_t {
+	atomic_size_t   inpos   CACHE_ALIGNED;
+	atomic_size_t   outpos  CACHE_ALIGNED;
+	hon_msg_t*      buf     CACHE_ALIGNED;
+	size_t          mask;
+} hon_msgbox_t;
+
+hon_msgbox_t* hon_msgbox_create(void);
 
 /**
  *  Context.
  */
 
 typedef struct hon_slot_t {
-	int nin;
-	hon_lfq_t* inbox;
-	int nout;
-	hon_lfq_t* outbox;
+	int             nin;
+	hon_msgbox_t*   inbox;
+	int             nout;
+	hon_msgbox_t*   outbox;
 } hon_slot_t;
 
 typedef struct hon_ctx_t {
-	int nslot;
+	int         nslot;
 	hon_slot_t* slots;
 } hon_ctx_t;
 
@@ -55,18 +75,19 @@ int     hon_ctx_attach(void);
  *  Actor.
  */
 
-typedef void* (hon_actorfn_t) (void* args);
+typedef void (hon_actor_be_t) (void* args);
 
 typedef struct hon_actor_t {
-	int sid;        // slot id
-	pthread_t tid;  // pthread id
-	hon_actorfn_t* fn;
-	void* args;
+	int             sid;
+	pthread_t       tid;
+	hon_actor_be_t* fn;
+	void*           args;
 } hon_actor_t;
 
 hon_actor_t*    hon_actor_create(void);
-int             hon_actor_start(hon_actor_t* self,
-								hon_actorfn_t* fn,
-								void* args);
+void            hon_actor_behavior(hon_actor_t* self,
+								   hon_actor_be_t* fn,
+								   void* args);
+void            hon_actor_start(hon_actor_t* self);
 
 #endif /* !_HON_H */
