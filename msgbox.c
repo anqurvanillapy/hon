@@ -26,7 +26,7 @@ int
 hon_msgbox_push(hon_msgbox_t* self, hon_msg_t* msg)
 {
 	hon_msg_t* tmp;
-	size_t pos, seq, size;
+	size_t pos, seq;
 	intptr_t diff;
 
 	pos = atomic_load_explicit(&self->inpos, memory_order_relaxed);

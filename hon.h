@@ -72,13 +72,14 @@ typedef struct hon_slot_t {
 } hon_slot_t;
 
 typedef struct hon_ctx_t {
-	int         nslot;
-	hon_slot_t* slots;
+	int             nslot;
+	hon_slot_t*     slots;
+	pthread_mutex_t mtx;
 } hon_ctx_t;
 
 void    hon_ctx_init(void);
 int     hon_ctx_attach(void);
-void    deliver_messages(void);
+void    deliver_messages(int id);
 void    hon_ctx_shutdown(void);
 
 /**

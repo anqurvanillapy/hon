@@ -4,21 +4,21 @@ static int _started = 0;
 static hon_ctx_t* _ctx = NULL;
 
 static int
-_hon_ctx_new_msgbox(int i)
+_hon_ctx_new_msgbox(int id)
 {
-	_ctx->slots[i].inbox = hon_msgbox_create();
-	if (UNLIKELY(!_ctx->slots[i].inbox)) {
+	_ctx->slots[id].inbox = hon_msgbox_create();
+	if (UNLIKELY(!_ctx->slots[id].inbox)) {
 		return 0;
 	}
 
-	_ctx->slots[i].outbox = hon_msgbox_create();
-	if (UNLIKELY(!_ctx->slots[i].outbox)) {
-		FREEN(_ctx->slots[i].inbox);
+	_ctx->slots[id].outbox = hon_msgbox_create();
+	if (UNLIKELY(!_ctx->slots[id].outbox)) {
+		FREEN(_ctx->slots[id].inbox);
 		return 0;
 	}
 
-	_ctx->slots[i].terminating = 0;
-	_ctx->slots[i].nin = _ctx->slots[i].nout = 0;
+	_ctx->slots[id].terminating = 0;
+	_ctx->slots[id].nin = _ctx->slots[id].nout = 0;
 	return 1;
 }
 
@@ -36,6 +36,9 @@ hon_ctx_init()
 	_ctx->slots = (hon_slot_t*)malloc(sizeof(hon_slot_t) * DEFAULT_SLOTS);
 	ERRNO_ASSERT(_ctx->slots);
 
+	int rc = pthread_mutex_init(&_ctx->mtx, NULL);
+	ERRNO_ASSERT(rc == 0);
+
 	_started = 1;
 }
 
@@ -52,4 +55,18 @@ hon_ctx_attach()
 
 	++_ctx->nslot;
 	return n;
+}
+
+void
+deliver_messages(int id)
+{
+	pthread_mutex_lock(&_ctx->mtx);
+	// TODO
+	(void)id;
+	pthread_mutex_unlock(&_ctx->mtx);
+}
+
+void
+hon_ctx_shutdown()
+{
 }
