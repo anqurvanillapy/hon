@@ -10,10 +10,13 @@
 #include <errno.h>
 #include <assert.h>
 
-#define DEFAULT_SLOTS   16
-#define MAX_SLOTS       256
+#define DEFAULT_SLOTS       16
+#define MAX_SLOTS           256
 
-#define MSGBOX_BUFSIZ   256
+#define MSGBOX_BUFSIZ       256
+
+#define MAX_DELIVERY_COUNT  8
+#define MAX_DELIVERY_DELAY  3000000
 
 /**
  *  Utilities.
@@ -68,6 +71,7 @@ typedef struct hon_mailbox_t {
 	atomic_size_t   size    CACHE_ALIGNED;
 	hon_msg_t*      buf;
 	size_t          mask;
+	uint64_t        last_tsc;
 } hon_mailbox_t;
 
 hon_mailbox_t*  hon_mailbox_create(void);
@@ -102,7 +106,7 @@ void            hon_ctx_shutdown(void);
 
 int             hon_ctx_attach(void);
 hon_slot_t*     hon_ctx_get_slot(int id);
-void            hon_deliver_messages(int id);
+void            hon_ctx_deliver_messages(hon_mailbox_t* self);
 
 /**
  *  Actor.

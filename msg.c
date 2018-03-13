@@ -107,8 +107,7 @@ hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg)
 size_t
 hon_mailbox_size(hon_mailbox_t* self)
 {
-	size_t size = atomic_load_explicit(&self->size, memory_order_relaxed);
-	return size;
+	return atomic_load_explicit(&self->size, memory_order_relaxed);
 }
 
 HON_API hon_msg_t*
@@ -144,6 +143,7 @@ hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 
 	msg->from = self->id;
 	msg->to = to ? to->id : self->id;
+	hon_ctx_deliver_messages(slot->outbox);
 	return hon_mailbox_push(slot->outbox, msg);
 }
 
@@ -160,5 +160,6 @@ hon_msg_recv(hon_actor_t* self, hon_msg_t* msg)
 		return 0;
 	}
 
+	hon_ctx_deliver_messages(slot->outbox);
 	return hon_mailbox_pop(slot->inbox, msg);
 }

@@ -3,6 +3,14 @@
 static int _started = 0;
 static hon_ctx_t* _ctx = NULL;
 
+static uint64_t
+_rdtsc()
+{
+	uint32_t low, high;
+	__asm__ __volatile__ ("rdtsc" : "=a"(low), "=d"(high));
+	return (uint64_t)high << 32 | low;
+}
+
 static int
 _hon_ctx_new_mailbox(int id)
 {
@@ -89,11 +97,18 @@ hon_ctx_get_slot(int id)
 }
 
 void
-hon_deliver_messages(int id)
+hon_ctx_deliver_messages(hon_mailbox_t* self)
 {
 	CTX_SHALL_BE_RUNNING;
 
+	if ((self->last_tsc && _rdtsc() - self->last_tsc < MAX_DELIVERY_DELAY)
+	|| hon_mailbox_size(self) < MAX_DELIVERY_COUNT) {
+		return;
+	}
+
 	pthread_mutex_lock(&_ctx->mtx);
+
 	// TODO
+
 	pthread_mutex_unlock(&_ctx->mtx);
 }
