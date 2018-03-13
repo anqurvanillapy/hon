@@ -42,6 +42,12 @@ hon_ctx_init()
 	_started = 1;
 }
 
+void
+hon_ctx_shutdown()
+{
+	CTX_SHALL_BE_RUNNING;
+}
+
 int
 hon_ctx_attach()
 {
@@ -57,15 +63,37 @@ hon_ctx_attach()
 	return n;
 }
 
-void
-hon_deliver_messages(int id)
+hon_slot_t*
+hon_ctx_get_slot(int id)
 {
-	pthread_mutex_lock(&_ctx->mtx);
-	// TODO
-	pthread_mutex_unlock(&_ctx->mtx);
+	CTX_SHALL_BE_RUNNING;
+
+	if (UNLIKELY(id < 0 && id >= _ctx->nslot)) {
+		errno = EBADSLT;
+		return NULL;
+	}
+
+	hon_slot_t* slot = &_ctx->slots[id];
+
+	if (UNLIKELY(!slot->inbox || !slot->outbox)) {
+		errno = EBADSLT;
+		return NULL;
+	}
+
+	if (UNLIKELY(slot->terminating)) {
+		errno = ESHUTDOWN;
+		return NULL;
+	}
+
+	return slot;
 }
 
 void
-hon_ctx_shutdown()
+hon_deliver_messages(int id)
 {
+	CTX_SHALL_BE_RUNNING;
+
+	pthread_mutex_lock(&_ctx->mtx);
+	// TODO
+	pthread_mutex_unlock(&_ctx->mtx);
 }

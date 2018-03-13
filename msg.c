@@ -22,6 +22,13 @@ hon_mailbox_create()
 	return self;
 }
 
+void
+hon_mailbox_destroy(hon_mailbox_t* self)
+{
+	FREEN(self->buf);
+	FREEN(self);
+}
+
 int
 hon_mailbox_push(hon_mailbox_t* self, HON_OWNER(hon_msg_t*) msg)
 {
@@ -51,6 +58,8 @@ hon_mailbox_push(hon_mailbox_t* self, HON_OWNER(hon_msg_t*) msg)
 		}
 	}
 
+	tmp->from = msg->from;
+	tmp->to= msg->to;
 	tmp->size = msg->size;
 	tmp->data = msg->data;
 	atomic_fetch_add_explicit(&self->size, 1, memory_order_relaxed);
@@ -102,13 +111,6 @@ hon_mailbox_size(hon_mailbox_t* self)
 	return size;
 }
 
-void
-hon_mailbox_destroy(hon_mailbox_t* self)
-{
-	FREEN(self->buf);
-	FREEN(self);
-}
-
 HON_API hon_msg_t*
 hon_msg_create(size_t size, HON_OWNER(void*) data)
 {
@@ -128,12 +130,15 @@ hon_msg_create(size_t size, HON_OWNER(void*) data)
 HON_API int
 hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 {
-	assert(self);
-	assert(msg);
+	if (UNLIKELY(!self || !msg)) {
+		errno = EINVAL;
+		return 0;
+	}
 
 	hon_slot_t* slot = hon_ctx_get_slot(self->id);
 
 	if (UNLIKELY(!slot)) {
+		errno = EBADSLT;
 		return 0;
 	}
 
@@ -142,4 +147,18 @@ hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 	return hon_mailbox_push(slot->outbox, msg);
 }
 
-// TODO: recv
+HON_API int
+hon_msg_recv(hon_actor_t* self, hon_msg_t* msg)
+{
+	if (UNLIKELY(!self || !msg)) {
+		return 0;
+	}
+
+	hon_slot_t* slot = hon_ctx_get_slot(self->id);
+
+	if (UNLIKELY(!slot)) {
+		return 0;
+	}
+
+	return hon_mailbox_pop(slot->inbox, msg);
+}

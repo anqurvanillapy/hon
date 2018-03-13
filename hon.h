@@ -36,6 +36,14 @@
 		}                                                                   \
 	} while (0)
 
+#define CTX_SHALL_BE_RUNNING        \
+	do {                            \
+		if (UNLIKELY(!_started)) {  \
+			errno = ENETDOWN;       \
+			ERRNO_ASSERT(0);        \
+		}                           \
+	} while (0)
+
 #define FREEN(x) do { free(x); x = NULL; } while (0)
 
 #define CACHE_ALIGNED __attribute__((__aligned__(sizeof(size_t) * 2)))
@@ -119,6 +127,6 @@ HON_API int             hon_msg_send(hon_actor_t* self,
 									 hon_actor_t* to,
 									 HON_OWNER(hon_msg_t*) msg);
 HON_API int             hon_msg_recv(hon_actor_t* self,
-									 HON_OWNER(hon_msg_t*) msg);
+									 hon_msg_t* msg);
 
 #endif /* !_HON_H */
