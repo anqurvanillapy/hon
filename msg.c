@@ -1,9 +1,9 @@
 #include "hon.h"
 
-hon_msgbox_t*
-hon_msgbox_create()
+hon_mailbox_t*
+hon_mailbox_create()
 {
-	hon_msgbox_t* self = (hon_msgbox_t*)malloc(sizeof(hon_msgbox_t));
+	hon_mailbox_t* self = (hon_mailbox_t*)malloc(sizeof(hon_mailbox_t));
 
 	if (UNLIKELY(!self)) {
 		return NULL;
@@ -23,7 +23,7 @@ hon_msgbox_create()
 }
 
 int
-hon_msgbox_push(hon_msgbox_t* self, HON_OWNER(hon_msg_t*) msg)
+hon_mailbox_push(hon_mailbox_t* self, HON_OWNER(hon_msg_t*) msg)
 {
 	hon_msg_t* tmp;
 	size_t pos, seq;
@@ -60,7 +60,7 @@ hon_msgbox_push(hon_msgbox_t* self, HON_OWNER(hon_msg_t*) msg)
 }
 
 int
-hon_msgbox_pop(hon_msgbox_t* self, hon_msg_t* msg)
+hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg)
 {
 	hon_msg_t* tmp;
 	size_t pos, seq;
@@ -96,14 +96,14 @@ hon_msgbox_pop(hon_msgbox_t* self, hon_msg_t* msg)
 }
 
 size_t
-hon_msgbox_size(hon_msgbox_t* self)
+hon_mailbox_size(hon_mailbox_t* self)
 {
 	size_t size = atomic_load_explicit(&self->size, memory_order_relaxed);
 	return size;
 }
 
 void
-hon_msgbox_destroy(hon_msgbox_t* self)
+hon_mailbox_destroy(hon_mailbox_t* self)
 {
 	FREEN(self->buf);
 	FREEN(self);
@@ -118,9 +118,28 @@ hon_msg_create(size_t size, HON_OWNER(void*) data)
 		return NULL;
 	}
 
-	self->seq = 0;
+	memset(self, 0, sizeof(hon_msg_t));
 	self->size = size;
 	self->data = data;
 	data = NULL;
 	return self;
 }
+
+HON_API int
+hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
+{
+	assert(self);
+	assert(msg);
+
+	hon_slot_t* slot = hon_ctx_get_slot(self->id);
+
+	if (UNLIKELY(!slot)) {
+		return 0;
+	}
+
+	msg->from = self->id;
+	msg->to = to ? to->id : self->id;
+	return hon_mailbox_push(slot->outbox, msg);
+}
+
+// TODO: recv

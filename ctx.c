@@ -4,14 +4,14 @@ static int _started = 0;
 static hon_ctx_t* _ctx = NULL;
 
 static int
-_hon_ctx_new_msgbox(int id)
+_hon_ctx_new_mailbox(int id)
 {
-	_ctx->slots[id].inbox = hon_msgbox_create();
+	_ctx->slots[id].inbox = hon_mailbox_create();
 	if (UNLIKELY(!_ctx->slots[id].inbox)) {
 		return 0;
 	}
 
-	_ctx->slots[id].outbox = hon_msgbox_create();
+	_ctx->slots[id].outbox = hon_mailbox_create();
 	if (UNLIKELY(!_ctx->slots[id].outbox)) {
 		FREEN(_ctx->slots[id].inbox);
 		return 0;
@@ -49,7 +49,7 @@ hon_ctx_attach()
 
 	int n = _ctx->nslot;
 
-	if (UNLIKELY(!_hon_ctx_new_msgbox(n))) {
+	if (UNLIKELY(!_hon_ctx_new_mailbox(n))) {
 		return -1;
 	}
 
@@ -58,11 +58,10 @@ hon_ctx_attach()
 }
 
 void
-deliver_messages(int id)
+hon_deliver_messages(int id)
 {
 	pthread_mutex_lock(&_ctx->mtx);
 	// TODO
-	(void)id;
 	pthread_mutex_unlock(&_ctx->mtx);
 }
 

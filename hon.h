@@ -46,25 +46,30 @@
 
 typedef struct hon_msg_t {
 	atomic_size_t   seq;
+	int             from;
+	int             to;
 	size_t          size;
 	void*           data;
 } hon_msg_t;
 
 HON_API hon_msg_t* hon_msg_create(size_t size, HON_OWNER(void*) data);
 
-typedef struct hon_msgbox_t {
+typedef struct hon_mailbox_t {
 	atomic_size_t   inpos   CACHE_ALIGNED;
 	atomic_size_t   outpos  CACHE_ALIGNED;
 	atomic_size_t   size    CACHE_ALIGNED;
 	hon_msg_t*      buf;
 	size_t          mask;
-} hon_msgbox_t;
+} hon_mailbox_t;
 
-hon_msgbox_t*   hon_msgbox_create(void);
-int             hon_msgbox_push(hon_msgbox_t* self, HON_OWNER(hon_msg_t*) msg);
-int             hon_msgbox_pop(hon_msgbox_t* self, hon_msg_t* msg);
-size_t          hon_msgbox_size(hon_msgbox_t* self);
-void            hon_msgbox_destroy(hon_msgbox_t* self);
+hon_mailbox_t*  hon_mailbox_create(void);
+void            hon_mailbox_destroy(hon_mailbox_t* self);
+
+int             hon_mailbox_push(hon_mailbox_t* self,
+								 HON_OWNER(hon_msg_t*) msg);
+int             hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg);
+
+size_t          hon_mailbox_size(hon_mailbox_t* self);
 
 /**
  *  Context.
@@ -72,9 +77,9 @@ void            hon_msgbox_destroy(hon_msgbox_t* self);
 
 typedef struct hon_slot_t {
 	int             nin;
-	hon_msgbox_t*   inbox;
+	hon_mailbox_t*  inbox;
 	int             nout;
-	hon_msgbox_t*   outbox;
+	hon_mailbox_t*  outbox;
 	int             terminating;
 } hon_slot_t;
 
@@ -84,10 +89,12 @@ typedef struct hon_ctx_t {
 	pthread_mutex_t mtx;
 } hon_ctx_t;
 
-void    hon_ctx_init(void);
-int     hon_ctx_attach(void);
-void    deliver_messages(int id);
-void    hon_ctx_shutdown(void);
+void            hon_ctx_init(void);
+void            hon_ctx_shutdown(void);
+
+int             hon_ctx_attach(void);
+hon_slot_t*     hon_ctx_get_slot(int id);
+void            hon_deliver_messages(int id);
 
 /**
  *  Actor.
@@ -107,5 +114,11 @@ HON_API void            hon_actor_behavior(hon_actor_t* self,
 										   hon_actor_be_t* fn,
 										   void* args);
 HON_API void            hon_actor_start(hon_actor_t* self);
+
+HON_API int             hon_msg_send(hon_actor_t* self,
+									 hon_actor_t* to,
+									 HON_OWNER(hon_msg_t*) msg);
+HON_API int             hon_msg_recv(hon_actor_t* self,
+									 HON_OWNER(hon_msg_t*) msg);
 
 #endif /* !_HON_H */
