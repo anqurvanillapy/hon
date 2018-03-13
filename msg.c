@@ -23,7 +23,7 @@ hon_msgbox_create()
 }
 
 int
-hon_msgbox_push(hon_msgbox_t* self, hon_msg_t* msg)
+hon_msgbox_push(hon_msgbox_t* self, HON_OWNER(hon_msg_t*) msg)
 {
 	hon_msg_t* tmp;
 	size_t pos, seq;
@@ -55,7 +55,7 @@ hon_msgbox_push(hon_msgbox_t* self, hon_msg_t* msg)
 	tmp->data = msg->data;
 	atomic_fetch_add_explicit(&self->size, 1, memory_order_relaxed);
 	atomic_store_explicit(&tmp->seq, pos + 1, memory_order_release);
-	msg = NULL;
+	FREEN(msg);
 	return 1;
 }
 
@@ -107,4 +107,20 @@ hon_msgbox_destroy(hon_msgbox_t* self)
 {
 	FREEN(self->buf);
 	FREEN(self);
+}
+
+HON_API hon_msg_t*
+hon_msg_create(size_t size, HON_OWNER(void*) data)
+{
+	hon_msg_t* self = (hon_msg_t*)malloc(sizeof(hon_msg_t));
+
+	if (UNLIKELY(!self)) {
+		return NULL;
+	}
+
+	self->seq = 0;
+	self->size = size;
+	self->data = data;
+	data = NULL;
+	return self;
 }

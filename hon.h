@@ -19,6 +19,11 @@
  *  Utilities.
  */
 
+#define HON_API
+
+// Takes ownership from the caller.
+#define HON_OWNER(x) x
+
 #define UNLIKELY(cond) __builtin_expect((cond), 0)
 
 #define ERRNO_ASSERT(x)                                                     \
@@ -45,6 +50,8 @@ typedef struct hon_msg_t {
 	void*           data;
 } hon_msg_t;
 
+HON_API hon_msg_t* hon_msg_create(size_t size, HON_OWNER(void*) data);
+
 typedef struct hon_msgbox_t {
 	atomic_size_t   inpos   CACHE_ALIGNED;
 	atomic_size_t   outpos  CACHE_ALIGNED;
@@ -54,7 +61,7 @@ typedef struct hon_msgbox_t {
 } hon_msgbox_t;
 
 hon_msgbox_t*   hon_msgbox_create(void);
-int             hon_msgbox_push(hon_msgbox_t* self, hon_msg_t* msg);
+int             hon_msgbox_push(hon_msgbox_t* self, HON_OWNER(hon_msg_t*) msg);
 int             hon_msgbox_pop(hon_msgbox_t* self, hon_msg_t* msg);
 size_t          hon_msgbox_size(hon_msgbox_t* self);
 void            hon_msgbox_destroy(hon_msgbox_t* self);
@@ -95,10 +102,10 @@ typedef struct hon_actor_t {
 	void*           args;
 } hon_actor_t;
 
-hon_actor_t*    hon_actor_create(void);
-void            hon_actor_behavior(hon_actor_t* self,
-								   hon_actor_be_t* fn,
-								   void* args);
-void            hon_actor_start(hon_actor_t* self);
+HON_API hon_actor_t*    hon_actor_create(void);
+HON_API void            hon_actor_behavior(hon_actor_t* self,
+										   hon_actor_be_t* fn,
+										   void* args);
+HON_API void            hon_actor_start(hon_actor_t* self);
 
 #endif /* !_HON_H */
