@@ -55,15 +55,23 @@
  *  Messaging.
  */
 
+enum HON_CMD {
+	HON_CMD_NIL,
+	HON_CMD_TERM
+};
+
 typedef struct hon_msg_t {
 	atomic_size_t   seq;
 	int             from;
 	int             to;
 	size_t          size;
 	void*           data;
+	unsigned char   cmd;
 } hon_msg_t;
 
 HON_API hon_msg_t* hon_msg_create(size_t size, HON_OWNER(void*) data);
+
+hon_msg_t* hon_cmd_create(unsigned char cmd);
 
 typedef struct hon_mailbox_t {
 	atomic_size_t   inpos   CACHE_ALIGNED;

@@ -5,7 +5,8 @@ _hon_actor_threadfn(void* args)
 {
 	hon_actor_t* self = (hon_actor_t*)args;
 	self->fn(self->args);
-	// TODO: Send term msg.
+	hon_msg_t* cmd = hon_cmd_create(HON_CMD_TERM);
+	hon_msg_send(self, self, cmd);
 	return NULL;
 }
 

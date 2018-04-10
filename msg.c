@@ -79,7 +79,7 @@ hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg)
 	pos = atomic_load_explicit(&self->outpos, memory_order_relaxed);
 
 	for (;;) {
-		tmp     = &self->buf[pos % self->mask];
+		tmp     = &self->buf[pos & self->mask];
 		seq     = atomic_load_explicit(&tmp->seq, memory_order_acquire);
 		diff    = (intptr_t)seq - (intptr_t)(pos + 1);
 
@@ -134,6 +134,15 @@ hon_msg_create(size_t size, HON_OWNER(void*) data)
 	return self;
 }
 
+hon_msg_t*
+hon_cmd_create(unsigned char cmd)
+{
+	hon_msg_t* msg = hon_msg_create(0, NULL);
+	ERRNO_ASSERT(msg);
+	msg->cmd = cmd;
+	return msg;
+}
+
 HON_API int
 hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 {
@@ -152,6 +161,7 @@ hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 
 	msg->from = self->id;
 	msg->to = to ? to->id : self->id;
+	msg->cmd = HON_CMD_NIL;
 	hon_ctx_deliver_messages(src_slot->outbox);
 	return hon_mailbox_push(src_slot->outbox, msg);
 }

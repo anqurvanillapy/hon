@@ -116,6 +116,10 @@ hon_ctx_deliver_messages(hon_mailbox_t* self)
 		hon_msg_t* msg = NULL;
 		ERRNO_ASSERT(hon_mailbox_pop(self, msg));
 
+		if (UNLIKELY(msg->cmd != HON_CMD_NIL)) {
+			_hon_ctx_process_cmd(/* TODO */);
+		}
+
 		hon_slot_t* dst = hon_ctx_get_slot(msg->to);
 		ERRNO_ASSERT(dst);
 
