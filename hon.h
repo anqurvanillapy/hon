@@ -82,6 +82,7 @@ int             hon_mailbox_push(hon_mailbox_t* self,
 int             hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg);
 
 size_t          hon_mailbox_size(hon_mailbox_t* self);
+int             hon_mailbox_is_full(hon_mailbox_t* self);
 
 /**
  *  Context.

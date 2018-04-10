@@ -54,6 +54,7 @@ void
 hon_ctx_shutdown()
 {
 	CTX_SHALL_BE_RUNNING;
+	// TODO
 }
 
 int
@@ -108,7 +109,23 @@ hon_ctx_deliver_messages(hon_mailbox_t* self)
 
 	pthread_mutex_lock(&_ctx->mtx);
 
-	// TODO
+	size_t i;
+	size_t nmsg = hon_mailbox_size(self);
+
+	for (i = 0; i < nmsg; ++i) {
+		hon_msg_t* msg = NULL;
+		ERRNO_ASSERT(hon_mailbox_pop(self, msg));
+
+		hon_slot_t* dst = hon_ctx_get_slot(msg->to);
+		ERRNO_ASSERT(dst);
+
+		if (UNLIKELY(hon_mailbox_is_full(dst->inbox))) {
+			ERRNO_ASSERT(hon_mailbox_push(dst->outbox, msg));
+			continue;
+		}
+
+		ERRNO_ASSERT(hon_mailbox_push(dst->inbox, msg));
+	}
 
 	pthread_mutex_unlock(&_ctx->mtx);
 }

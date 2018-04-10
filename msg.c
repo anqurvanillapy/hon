@@ -54,6 +54,7 @@ hon_mailbox_push(hon_mailbox_t* self, HON_OWNER(hon_msg_t*) msg)
 		} else if (diff > 0) {
 			pos = atomic_load_explicit(&self->inpos, memory_order_relaxed);
 		} else {
+			errno = ENOBUFS;
 			return 0;
 		}
 	}
@@ -93,6 +94,7 @@ hon_mailbox_pop(hon_mailbox_t* self, hon_msg_t* msg)
 		} else if (diff > 0) {
 			pos = atomic_load_explicit(&self->outpos, memory_order_relaxed);
 		} else {
+			errno = EAGAIN;
 			return 0;
 		}
 	}
@@ -108,6 +110,12 @@ size_t
 hon_mailbox_size(hon_mailbox_t* self)
 {
 	return atomic_load_explicit(&self->size, memory_order_relaxed);
+}
+
+int
+hon_mailbox_is_full(hon_mailbox_t* self)
+{
+	return hon_mailbox_size(self) < MSGBOX_BUFSIZ;
 }
 
 HON_API hon_msg_t*
@@ -134,17 +142,18 @@ hon_msg_send(hon_actor_t* self, hon_actor_t* to, HON_OWNER(hon_msg_t*) msg)
 		return 0;
 	}
 
-	hon_slot_t* slot = hon_ctx_get_slot(self->id);
+	hon_slot_t* src_slot = hon_ctx_get_slot(self->id);
+	hon_slot_t* dst_slot = hon_ctx_get_slot(to->id);
 
-	if (UNLIKELY(!slot)) {
+	if (UNLIKELY(!src_slot || !dst_slot)) {
 		errno = EBADSLT;
 		return 0;
 	}
 
 	msg->from = self->id;
 	msg->to = to ? to->id : self->id;
-	hon_ctx_deliver_messages(slot->outbox);
-	return hon_mailbox_push(slot->outbox, msg);
+	hon_ctx_deliver_messages(src_slot->outbox);
+	return hon_mailbox_push(src_slot->outbox, msg);
 }
 
 HON_API int
